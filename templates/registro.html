@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Registrar Estudiante{% endblock %}
+
+{% block content %}
+<h2 style="color: #667eea; text-align: center; margin-bottom: 10px;">➕ Registrar Nuevo Estudiante</h2>
+<p style="text-align: center; color: #666; margin-bottom: 30px;">
+    📋 Al registrarse, se generará automáticamente una proforma de <strong>$1,800.00</strong>
+</p>
+
+<form method="POST" action="{{ url_for('crear_estudiante') }}">
+    <div class="form-group">
+        <label for="codigo_estudiante">Código de Estudiante *</label>
+        <input type="text" id="codigo_estudiante" name="codigo_estudiante" required 
+               placeholder="Ej: EST-2025-001">
+    </div>
+    
+    <div class="form-group">
+        <label for="cedula">Cédula *</label>
+        <input type="text" id="cedula" name="cedula" required 
+               placeholder="Ej: 0123456789">
+    </div>
+    
+    <div class="form-group">
+        <label for="nombre">Nombre *</label>
+        <input type="text" id="nombre" name="nombre" required 
+               placeholder="Ej: Juan">
+    </div>
+    
+    <div class="form-group">
+        <label for="apellido">Apellido *</label>
+        <input type="text" id="apellido" name="apellido" required 
+               placeholder="Ej: Pérez">
+    </div>
+    
+    <div class="form-group">
+        <label for="carrera">Carrera *</label>
+        <input type="text" id="carrera" name="carrera" required 
+               placeholder="Ej: Ingeniería en Sistemas">
+    </div>
+    
+    <div class="form-group">
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" required 
+               placeholder="Ej: juan.perez@email.com">
+    </div>
+    
+    <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196F3;">
+        <strong>ℹ️ Nota:</strong> Al hacer clic en "Registrar", se creará automáticamente:
+        <ul style="margin: 10px 0 0 20px;">
+            <li>Tu registro como estudiante (Estado: No Matriculado)</li>
+            <li>Una proforma de matrícula por $1,800.00 (Estado: Pendiente)</li>
+        </ul>
+    </div>
+    
+    <button type="submit">Registrar Estudiante y Generar Proforma</button>
+</form>
+{% endblock %}
