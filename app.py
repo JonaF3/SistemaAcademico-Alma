@@ -8,6 +8,17 @@ app = Flask(__name__)
 app.secret_key = 'tu_clave_secreta_aqui_cambiala'  # Necesario para flash messages
 CORS(app)  # Permitir comunicación con otros sistemas
 
+# Configurar CORS
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
+
+
+
 # URL del Sistema Contable (cambiar cuando lo implementes)
 SISTEMA_CONTABLE_URL = 'http://192.168.0.14:5001'
 
@@ -66,7 +77,7 @@ def crear_estudiante():
             VALUES (?, ?, ?, ?, ?, ?)
         ''', (codigo_estudiante, cedula, nombre, apellido, carrera, email))
         
-        id_estudiante = cursor.lastrowid  # Obtener el ID del estudiante recién creado
+        id_estudiante = cursor.lastrowid
         
         # ========== GENERAR PROFORMA AUTOMÁTICAMENTE ==========
         monto = 1800.00
@@ -82,27 +93,50 @@ def crear_estudiante():
         conn.close()
         
         # ========== COMUNICACIÓN CON SISTEMA CONTABLE ==========
+        print("=" * 70)
+        print(f"🔄 INICIANDO COMUNICACIÓN CON SISTEMA CONTABLE")
+        print(f"📍 URL: {SISTEMA_CONTABLE_URL}/api/pagos/registrar-proforma")
+        
+        datos_enviar = {
+            'numero_proforma': numero_proforma,
+            'codigo_estudiante': codigo_estudiante,
+            'nombre_completo': f"{nombre} {apellido}",
+            'carrera': carrera,
+            'monto': monto
+        }
+        print(f"📦 Datos a enviar: {datos_enviar}")
+        
         try:
-            # Notificar al sistema contable sobre la nueva proforma
             response = requests.post(
                 f'{SISTEMA_CONTABLE_URL}/api/pagos/registrar-proforma',
-                json={
-                    'numero_proforma': numero_proforma,
-                    'codigo_estudiante': codigo_estudiante,
-                    'nombre_completo': f"{nombre} {apellido}",
-                    'carrera': carrera,
-                    'monto': monto
-                },
-                timeout=5
+                json=datos_enviar,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
             )
+            
+            print(f"✅ Código de respuesta: {response.status_code}")
+            print(f"📄 Respuesta: {response.text}")
+            print("=" * 70)
             
             if response.status_code == 200:
                 flash(f'✅ Estudiante registrado y proforma {numero_proforma} generada exitosamente', 'success')
             else:
-                flash(f'✅ Estudiante registrado con proforma {numero_proforma}, pero hubo un problema al notificar a contabilidad', 'warning')
+                flash(f'✅ Estudiante registrado con proforma {numero_proforma}, pero hubo un problema al notificar a contabilidad (código: {response.status_code})', 'warning')
                 
-        except requests.exceptions.RequestException as e:
-            flash(f'✅ Estudiante registrado con proforma {numero_proforma}, pero el sistema contable no está disponible', 'warning')
+        except requests.exceptions.ConnectionError as e:
+            print(f"❌ ERROR DE CONEXIÓN: {str(e)}")
+            print("=" * 70)
+            flash(f'⚠️ Estudiante registrado con proforma {numero_proforma}, pero no se pudo conectar con el sistema contable', 'warning')
+            
+        except requests.exceptions.Timeout as e:
+            print(f"❌ TIMEOUT: {str(e)}")
+            print("=" * 70)
+            flash(f'⚠️ Estudiante registrado con proforma {numero_proforma}, pero el sistema contable no respondió a tiempo', 'warning')
+            
+        except Exception as e:
+            print(f"❌ ERROR GENERAL: {str(e)}")
+            print("=" * 70)
+            flash(f'⚠️ Estudiante registrado con proforma {numero_proforma}, pero hubo un error: {str(e)}', 'warning')
         
         return redirect(url_for('index'))
         
@@ -110,92 +144,6 @@ def crear_estudiante():
         flash(f'❌ Error al registrar estudiante: {str(e)}', 'error')
         return redirect(url_for('registro'))
 
-
-# ========== ESTAS RUTAS YA NO SON NECESARIAS ==========
-# Pero las dejamos comentadas por si quieres recuperarlas después
-
-# @app.route('/generar-proforma')
-# def formulario_proforma():
-#     """Formulario para generar proforma"""
-#     conn = get_db_connection()
-#     estudiantes = conn.execute(
-#         'SELECT * FROM estudiantes WHERE estado_matricula = "no_matriculado" ORDER BY nombre'
-#     ).fetchall()
-#     conn.close()
-#     
-#     return render_template('proforma.html', estudiantes=estudiantes)
-
-#@app.route('/proformas', methods=['POST'])
-#def crear_proforma():
-    #"""Generar proforma para un estudiante"""
-    #try:
-       # id_estudiante = request.form['id_estudiante']
-       # monto = 1800.00  # Monto fijo como solicitaste
-        
-      #  conn = get_db_connection()
-        
-        # Obtener datos del estudiante
-      #  estudiante = conn.execute(
-          #  'SELECT * FROM estudiantes WHERE id = ?', 
-        #    (id_estudiante,)
-        #).fetchone()
-        
-        #if not estudiante:
-          #  flash('❌ Estudiante no encontrado', 'error')
-           # conn.close()
-           # return redirect(url_for('formulario_proforma'))
-        
-        # Verificar si ya tiene proforma pendiente
-       # proforma_existente = conn.execute(
-          #  'SELECT * FROM proformas WHERE id_estudiante = ? AND estado = "pendiente"',
-          #  (id_estudiante,)
-       # ).fetchone()
-        
-        #if proforma_existente:
-           # flash('❌ Este estudiante ya tiene una proforma pendiente', 'error')
-           # conn.close()
-           # return redirect(url_for('formulario_proforma'))
-        
-        # Generar número de proforma
-       # numero_proforma = generar_numero_proforma()
-        
-        # Insertar proforma
-       # conn.execute('''
-         #   INSERT INTO proformas (numero_proforma, id_estudiante, codigo_estudiante, monto)
-         #   VALUES (?, ?, ?, ?)
-       # ''', (numero_proforma, id_estudiante, estudiante['codigo_estudiante'], monto))
-        
-        #conn.commit()
-        #conn.close()
-        
-        # ========== COMUNICACIÓN CON SISTEMA CONTABLE ==========
-       # try:
-     #       # Notificar al sistema contable sobre la nueva proforma
-      #      response = requests.post(
-        #        f'{SISTEMA_CONTABLE_URL}/api/pagos/registrar-proforma',
-          #      json={
-           #         'numero_proforma': numero_proforma,
-           #         'codigo_estudiante': estudiante['codigo_estudiante'],
-            ##        'nombre_completo': f"{estudiante['nombre']} {estudiante['apellido']}",
-             #       'carrera': estudiante['carrera'],
-            #        'monto': monto
-            #    },
-            #    timeout=5
-           # )
-            
-          #  if response.status_code == 200:
-         #      flash(f'✅ Proforma {numero_proforma} generada y registrada en contabilidad', 'success')
-          #  else:
-         #       flash(f'⚠️ Proforma generada, pero hubo un problema al notificar a contabilidad', 'warning')
-                
-      #  except requests.exceptions.RequestException as e:
-       #     flash(f'⚠️ Proforma generada, pero el sistema contable no está disponible', 'warning')
-        
-    #    return redirect(url_for('index'))
-        
-  #  except Exception as e:
-    #    flash(f'❌ Error al generar proforma: {str(e)}', 'error')
-     #   return redirect(url_for('formulario_proforma'))
 
 # ========== API PARA COMUNICACIÓN CON SISTEMA CONTABLE ==========
 
