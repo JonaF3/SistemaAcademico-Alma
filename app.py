@@ -271,5 +271,29 @@ def consultar_proforma(numero_proforma):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/proforma/<numero_proforma>')
+def ver_proforma(numero_proforma):
+    """Ver detalles de una proforma (para imprimir/guardar como PDF)"""
+    conn = get_db_connection()
+    
+    proforma = conn.execute('''
+        SELECT p.*, e.nombre, e.apellido, e.cedula, e.carrera, e.email
+        FROM proformas p
+        JOIN estudiantes e ON p.id_estudiante = e.id
+        WHERE p.numero_proforma = ?
+    ''', (numero_proforma,)).fetchone()
+    
+    conn.close()
+    
+    if not proforma:
+        flash('❌ Proforma no encontrada', 'error')
+        return redirect(url_for('index'))
+    
+    return render_template('ver_proforma.html', proforma=proforma)
+
+
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

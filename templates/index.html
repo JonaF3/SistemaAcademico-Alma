@@ -53,6 +53,7 @@
             <th>Monto</th>
             <th>Fecha</th>
             <th>Estado</th>
+            <th class="no-print">Acciones</th>
         </tr>
     </thead>
     <tbody>
@@ -64,6 +65,12 @@
             <td>${{ "%.2f"|format(proforma.monto) }}</td>
             <td>{{ proforma.fecha_generacion[:10] }}</td>
             <td><span class="badge {{ proforma.estado }}">{{ proforma.estado.title() }}</span></td>
+            <td class="no-print">
+                <a href="{{ url_for('ver_proforma', numero_proforma=proforma.numero_proforma) }}" 
+                   style="background: #667eea; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9em; display: inline-block;">
+                    📄 Ver Proforma
+                </a>
+            </td>
         </tr>
         {% endfor %}
     </tbody>
@@ -73,4 +80,5 @@
     <p>📭 No hay proformas generadas aún</p>
 </div>
 {% endif %}
+
 {% endblock %}
