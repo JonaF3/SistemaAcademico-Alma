@@ -9,7 +9,7 @@ app.secret_key = 'tu_clave_secreta_aqui_cambiala'  # Necesario para flash messag
 CORS(app)  # Permitir comunicación con otros sistemas
 
 # URL del Sistema Contable (cambiar cuando lo implementes)
-SISTEMA_CONTABLE_URL = 'http://localhost:5001'
+SISTEMA_CONTABLE_URL = 'http://192.168.0.14:5001'
 
 # Inicializar BD al arrancar
 init_db()
